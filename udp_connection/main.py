@@ -20,7 +20,7 @@ def main():
     try:
         while True:
             key_code = cv2.waitKey(1) & 0xFF
-            
+
             if key_code == ord('q'):
                 logger.info("'q' key pressed. Sending stop signal...")
                 receiver._handle_stop_signal()
@@ -36,7 +36,7 @@ def main():
 
             except queue.Empty:
                 pass
-            
+
             time.sleep(0.01)
 
     except KeyboardInterrupt:

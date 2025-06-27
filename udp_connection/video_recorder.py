@@ -1,7 +1,6 @@
 import logging
 import os
 import queue
-import time
 from datetime import datetime
 
 import cv2
@@ -26,12 +25,12 @@ class VideoRecorder:
         self.video_name = f"{now}.mp4"
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.out = cv2.VideoWriter(self.video_name, fourcc, self.fps, self.frame_size)
-        
+
         if self.out.isOpened():
-            logger.info(f"Recording started with resolution {self.frame_size}, saving to {self.video_name}")
+            logger.info("Recording started with resolution %s, saving to %s", self.frame_size, self.video_name)
             self.is_recording = True
         else:
-            logger.error(f"Could not open VideoWriter for {self.video_name}")
+            logger.error("Could not open VideoWriter for %s", self.video_name)
             self.is_recording = False
 
     def record(self, frame_queue):
@@ -47,41 +46,38 @@ class VideoRecorder:
         logger.info("Recording thread finished")
 
     def stop_recording(self):
-        self.is_recording = False 
+        self.is_recording = False
         if self.out:
-            logger.info(f"Finalizing video file: {self.video_name}")
+            logger.info("Finalizing video file: %s", self.video_name)
             self.out.release()
             self.out = None
-            logger.info(f"Recording stopped. Video saved as {self.video_name}")
+            logger.info("Recording stopped. Video saved as %s", self.video_name)
             self.send_video_to_api()
         else:
             logger.warning("Video recorder was not active or already stopped")
 
     def send_video_to_api(self):
         if not (self.video_name and os.path.exists(self.video_name)):
-            logger.error(f"Video file '{self.video_name}' not found for upload")
+            logger.error("Video file '%s' not found for upload", self.video_name)
             return
 
         if config.API_URL:
             url = f"{config.API_URL.rstrip('/')}/upload/"
             headers = {'Authorization': f'Bearer {self.token}'}
-            
-            logger.info(f"Attempting to upload video {self.video_name} to {url}")
+
+            logger.info("Attempting to upload video %s to %s", self.video_name, url)
             try:
                 with open(self.video_name, 'rb') as video_file:
                     files = {'video': (os.path.basename(self.video_name), video_file, 'video/mp4')}
-                    
                     response = requests.post(url, files=files, headers=headers, timeout=60)
                     response.raise_for_status()
-                    logger.info(f"API response: {response.status_code} - {response.text}")
+                    logger.info("API response: %s - %s", response.status_code, response.text)
                     logger.info("Video uploaded successfully!")
-                    
                     self.cleanup_video_file()
-
             except requests.exceptions.RequestException as e:
-                logger.error(f"Error sending video to API: {e}")
+                logger.error("Error sending video to API: %s", e)
             except Exception as e:
-                logger.error(f"Unexpected error during upload: {e}")
+                logger.error("Unexpected error during upload: %s", e)
         else:
             logger.warning("API URL not configured in config.py. Video will not be sent")
 
@@ -89,6 +85,6 @@ class VideoRecorder:
         if self.video_name and os.path.exists(self.video_name):
             try:
                 os.remove(self.video_name)
-                logger.info(f"Local file {self.video_name} deleted")
+                logger.info("Local file %s deleted", self.video_name)
             except Exception as e:
-                logger.error(f"Error cleaning up video file: {e}")
+                logger.error("Error cleaning up video file: %s", e)

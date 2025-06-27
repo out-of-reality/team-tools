@@ -14,4 +14,4 @@ class PoseSender:
             serialized = json_data.encode('utf-8')
             self.socket.sendto(serialized, addr_tuple)
         except Exception as e:
-            logger.error(f"Error sending landmarks: {e}")
+            logger.error("Error sending landmarks: %s", e)

@@ -65,3 +65,5 @@ docs/_build/
 *.so
 # Media files
 *.mp4
+# Data files
+*.csv
