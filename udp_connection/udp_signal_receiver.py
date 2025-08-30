@@ -20,6 +20,7 @@ class UDPSignalReceiver:
         self.recorder = None
         self.debug_mode = debug_mode
         self.is_recording = False
+        self.shutdown_requested = False
         self.lock = threading.Lock()
 
         self.recording_thread = None
@@ -52,6 +53,8 @@ class UDPSignalReceiver:
                     self._handle_start_signal(signal, addr)
                 elif signal.startswith("stop"):
                     self._handle_stop_signal()
+                elif signal.startswith("shutdown"):
+                    self._handle_shutdown_signal()
             except Exception as e:
                 logger.error("Error in UDP listener: %s", e)
 
@@ -62,8 +65,8 @@ class UDPSignalReceiver:
                 return
 
             logger.info("Starting new recording session")
-
-            cap_test = cv2.VideoCapture(0)
+            self.camera_id = self.get_camera_id()
+            cap_test = cv2.VideoCapture(self.camera_id)
             if not cap_test.isOpened():
                 logger.error("Critical error: Cannot access camera to detect resolution")
                 return
@@ -100,6 +103,18 @@ class UDPSignalReceiver:
             self.processing_thread.start()
             self.hand_thread.start()
 
+    def get_camera_id(self, preferred_id=0):
+        for i in range(10):
+            try:
+                cap = cv2.VideoCapture(i)
+                if cap.isOpened():
+                    cap.release()
+                    return i
+            except Exception:
+                pass
+        logger.error("No camera found.")
+        return preferred_id
+
     def _handle_stop_signal(self):
         with self.lock:
             if not self.is_recording:
@@ -124,10 +139,17 @@ class UDPSignalReceiver:
 
             self.recorder = None
             logger.info("Service ready for new 'START' signal")
+    
+    def _handle_shutdown_signal(self):
+        logger.info("Requesting application termination...")
+        with self.lock:
+            if self.is_recording:
+                self._handle_stop_signal()
+            self.shutdown_requested = True
 
     def record_frames(self):
         try:
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(self.camera_id)
             if not cap.isOpened():
                 logger.error("Fatal error: Could not open camera")
                 self.is_recording = False

@@ -9,4 +9,4 @@ logging.basicConfig(
     ]
 )
 
-API_URL = "http://localhost:17069/out_of_reality_api"
+API_URL = "https://outofreality.francoleyes.xyz/out_of_reality_api"
