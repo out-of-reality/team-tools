@@ -20,11 +20,13 @@ def main():
     try:
         while True:
             key_code = cv2.waitKey(1) & 0xFF
-
+            
             if key_code == ord('q'):
                 logger.info("'q' key pressed. Sending stop signal...")
-                receiver._handle_stop_signal()
-
+                receiver._handle_shutdown_signal()
+            if receiver.shutdown_requested:
+                logger.info("Shutdown requested. Terminating application...")
+                break
             try:
                 frame_or_signal = receiver.display_queue.get_nowait()
 
